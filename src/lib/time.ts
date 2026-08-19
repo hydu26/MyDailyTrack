@@ -112,3 +112,15 @@ export function whenToStamp(w: When): Stamp | null {
   if (Number.isNaN(at.getTime())) return null
   return { localDate: w.date, measuredAt: at.toISOString(), localTz: currentTz() }
 }
+
+/** "12 phút trước" — cho mốc do nguồn ngoài cấp (giờ đăng bài).
+ *  Tính từ timestamp tuyệt đối, gọi lúc hiển thị nên không bao giờ cũ. */
+export function timeAgo(iso: string, now = Date.now()): string {
+  const mins = Math.round((now - new Date(iso).getTime()) / 60000)
+  if (mins < 1) return 'vừa xong'
+  if (mins < 60) return `${mins} phút trước`
+  const hours = Math.round(mins / 60)
+  if (hours < 24) return `${hours} giờ trước`
+  const days = Math.round(hours / 24)
+  return days === 1 ? 'hôm qua' : `${days} ngày trước`
+}

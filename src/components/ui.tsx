@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { localDateOf, nowWhen, relativeDay, type When } from '../lib/time'
@@ -85,15 +85,27 @@ export function NumberField({
   const commit = (raw: string) => {
     setDraft(null)
     const n = parse(raw)
+    latest.current = n
     if (n !== value) onChange(n)
     return n
   }
 
+  /** Giá trị mới nhất, cập nhật NGAY trong bump.
+   *
+   *  Cần vì `value` là prop: bấm −/+ nhiều lần thật nhanh thì React gộp các lần
+   *  cập nhật, mọi handler đọc cùng một `value` cũ và bốn lần bấm chỉ ra một
+   *  bước. Nhấn nhanh liên tiếp là chuyện bình thường trên điện thoại nên không
+   *  bỏ qua được. */
+  const latest = useRef(value)
+  useEffect(() => { latest.current = value }, [value])
+
   // Bấm −/+ giữa lúc đang gõ thì cộng từ chuỗi đang gõ, không phải giá trị cũ.
   const bump = (d: number) => {
-    const base = draft !== null ? parse(draft) : value
+    const base = draft !== null ? parse(draft) : latest.current
+    const next = norm(base + d)
+    latest.current = next
     setDraft(null)
-    onChange(norm(base + d))
+    onChange(next)
   }
 
   return (

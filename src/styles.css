@@ -46,8 +46,16 @@ button { font-family: inherit; color: inherit; border: 0; background: none; curs
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
 
 /* ===== Bố cục ===== */
-.app { height: 100%; max-width: 480px; margin: 0 auto; position: relative; overflow: hidden; background: var(--bg); }
-.scroll { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+/* flex column, KHÔNG phải `.scroll { height: 100% }`.
+   Với height:100% thì .scroll cao đúng bằng .app nhưng lại bắt đầu DƯỚI TopBar,
+   nên phần cuối bị .app cắt mất đúng chiều cao TopBar (~47px) và không cách nào
+   cuộn tới. Lỗi này có ở MỌI màn hình module, không riêng một cái. */
+.app { height: 100%; max-width: 480px; margin: 0 auto; position: relative; overflow: hidden;
+  background: var(--bg); display: flex; flex-direction: column; }
+/* min-height:0 là thứ cho phép flex item co lại nhỏ hơn nội dung của nó — thiếu
+   nó thì .scroll lại phình ra bằng nội dung và tràn y như cũ. */
+.scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding-bottom: max(32px, env(safe-area-inset-bottom)); }
 .pad { padding: 0 20px; }
 .block { padding: 20px; }
 .rule { height: 1px; background: var(--line); margin: 0 20px; }
@@ -100,7 +108,16 @@ button { font-family: inherit; color: inherit; border: 0; background: none; curs
 .todo-tile { grid-column: 1 / -1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 13px 14px 8px; }
 .todo-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
 .todo-hd .cnt { font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: .05em; }
-.trow { display: flex; align-items: center; gap: 11px; padding: 7px 0; width: 100%; text-align: left; }
+/* .trow là hàng (div), .tmain là phần bấm để tick. Nút-trong-nút là HTML không
+   hợp lệ nên phải tách ra khi thêm nút bỏ việc. */
+.trow { display: flex; align-items: center; gap: 4px; padding: 7px 0; width: 100%; }
+/* Vùng bấm của vòng tròn phải đủ lớn cho ngón tay (vòng chỉ 17px). Padding nới
+   vùng chạm, margin âm kéo lại để vòng vẫn thẳng lề với chữ phía trên. */
+.cbtn { flex: none; display: flex; align-items: center; padding: 9px 6px; margin: -9px 0 -9px -6px; }
+.tmain { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; text-align: left; }
+.tdel { flex: none; width: 24px; height: 24px; border-radius: 50%; color: var(--ink-4);
+  font-size: 15px; line-height: 1; border: 1px solid transparent; }
+.tdel:hover { color: var(--ink); border-color: var(--line); }
 .trow + .trow { border-top: 1px solid var(--line-2); }
 .cb { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid #4a4c45; flex: none; display: flex; align-items: center; justify-content: center; transition: .15s; }
 .cb svg { width: 9px; height: 9px; opacity: 0; color: var(--bg); }
@@ -223,3 +240,78 @@ button { font-family: inherit; color: inherit; border: 0; background: none; curs
 .whenfoot small { font-family: var(--mono); font-size: 10px; letter-spacing: .07em; color: var(--ink-3); text-transform: uppercase; }
 .whenfoot button { font-size: 11.5px; color: var(--ink-3); }
 .whenfoot button:hover { color: var(--ink); }
+
+/* ===== Đồng bộ / tài khoản ===== */
+.footlink { font-size: 11px; color: var(--ink-3); margin-top: 5px; }
+.footlink:hover { color: var(--ink-2); }
+.footnote { font-size: 10.5px; color: var(--ink-4); line-height: 1.6; text-align: center; margin-top: 14px; }
+
+.tf { display: block; margin-bottom: 12px; border: 1px solid var(--line); border-radius: var(--r); padding: 8px 11px; cursor: text; }
+.tf:focus-within { border-color: var(--ink-3); }
+.tf .eyebrow { display: block; margin-bottom: 3px; }
+.tinput { width: 100%; background: none; border: 0; padding: 0; color: var(--ink); font-family: var(--sans); font-size: 15px; }
+.tinput:focus, .tinput:focus-visible { outline: none; }
+
+/* Lỗi là thông tin, nhưng không đáng để thêm một màu nữa vào app — dùng viền */
+.errbox { border: 1px solid var(--line); border-left: 2px solid var(--ink-3); border-radius: 4px;
+  padding: 9px 11px; font-size: 11.5px; color: var(--ink-2); line-height: 1.5; margin-bottom: 14px; }
+
+.pushrow { display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  border: 1px solid var(--line); border-radius: var(--r); padding: 11px 13px; margin-bottom: 14px; }
+.pushrow .lab { font-size: 13px; color: var(--ink); }
+.pushrow .lab small { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: 3px; }
+.pushrow .qbtn { flex: none; padding: 8px 16px; font-size: 12.5px; }
+
+/* ===== Chip chọn (loại thể dục, cường độ) ===== */
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px;
+  font-size: 12.5px; color: var(--ink-2); transition: .15s; }
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 500; }
+.chip.sm { padding: 6px 11px; font-size: 11.5px; }
+/* Nút mở rộng/thu gọn là HÀNH ĐỘNG, không phải một lựa chọn lọc — viền nét đứt
+   để không bị đọc thành "một chủ đề nữa tên là + 7 nữa". */
+.chip.ghost { border-style: dashed; color: var(--ink-4); }
+.chip.ghost:hover { color: var(--ink-2); }
+.filter { margin-bottom: 12px; }
+.filter .eyebrow { display: block; margin-bottom: 7px; }
+.filter .chips { margin-bottom: 0; }
+.scale { display: flex; gap: 6px; flex: none; }
+.scale .chip { padding: 8px 0; width: 34px; text-align: center; font-family: var(--mono); }
+
+/* Tiêu đề nhóm nhỏ trong sheet (Lần đo 1 / Lần đo 2) */
+.subhead { display: flex; align-items: baseline; justify-content: space-between;
+  padding: 14px 2px 4px; border-top: 1px solid var(--line-2); margin-top: 10px; }
+.subhead button { font-size: 11.5px; color: var(--ink-3); }
+.subhead button:hover { color: var(--ink); }
+.resultline { display: flex; align-items: baseline; justify-content: space-between;
+  padding: 12px 2px 0; }
+.resultline .num { font-size: 15px; }
+
+/* ===== Tin tức =====
+   Nơi DUY NHẤT trong app có ảnh. Được phá lệ "gần như đơn sắc" vì ảnh bài báo
+   là nội dung, không phải trang trí — cùng logic với thang màu huyết áp. Mọi thứ
+   quanh ảnh vẫn đơn sắc: không bo tròn to, không bóng đổ, viền 1px. */
+.thumb, .lead-img { display: block; background: var(--raised); object-fit: cover; flex: none; }
+.thumb { width: 76px; height: 76px; border-radius: 6px; }
+.lead-img { width: 100%; aspect-ratio: 16 / 9; border-radius: 0; }
+/* Ảnh vỡ hoặc offline: khung trống có viền, không để icon ảnh lỗi hiện ra */
+.thumb.ph, .lead-img.ph { border: 1px solid var(--line); background: var(--surface); }
+
+.nmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-4); }
+.nmeta .src { color: var(--ink-3); }
+.nmeta .dot { color: var(--ink-4); }
+
+.lead { display: block; text-decoration: none; color: inherit; margin: 10px 0 4px; }
+.lead-txt { padding: 13px 20px 16px; }
+.lead .ttl { font-size: 18px; font-weight: 400; line-height: 1.34; letter-spacing: -.01em; }
+.lead:hover .ttl { text-decoration: underline; text-decoration-color: var(--ink-4); }
+
+.nrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding: 14px 0; border-top: 1px solid var(--line); text-decoration: none; color: inherit; }
+.nrow .txt { min-width: 0; flex: 1; }
+.nrow .ttl { font-size: 13.5px; line-height: 1.42; }
+.nrow:hover .ttl { text-decoration: underline; text-decoration-color: var(--ink-4); }
+

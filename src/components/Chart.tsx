@@ -80,3 +80,34 @@ export function BandChart({
     </svg>
   )
 }
+
+/* ---------- biểu đồ cột ---------- */
+/** Cột theo ngày. Dùng cho thứ mà "ngày không có gì" cũng là dữ liệu: tập thể
+ *  dục thì khoảng trống chính là thứ đáng nhìn, nên ngày bằng 0 vẫn vẽ một gạch
+ *  mờ ở đáy thay vì để trống hẳn — trống hẳn thì không phân biệt được "nghỉ" với
+ *  "chưa có dữ liệu".
+ */
+export function BarChart({
+  values, height = 84, ariaLabel,
+}: { values: number[]; height?: number; ariaLabel?: string }) {
+  if (!values.length) return <div className="empty">Chưa có dữ liệu</div>
+
+  const w = 330
+  const gap = values.length > 20 ? 1.5 : 3
+  const bw = (w - gap * (values.length - 1)) / values.length
+  const hi = Math.max(...values, 1)
+
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} style={{ width: '100%', height: 'auto', display: 'block' }}
+         role="img" aria-label={ariaLabel}>
+      {values.map((v, i) => {
+        const x = i * (bw + gap)
+        if (v <= 0) {
+          return <rect key={i} x={x} y={height - 1} width={bw} height="1" fill="var(--line)" />
+        }
+        const h = Math.max(2, (v / hi) * height)
+        return <rect key={i} x={x} y={height - h} width={bw} height={h} rx="1" fill="var(--ink-2)" />
+      })}
+    </svg>
+  )
+}
