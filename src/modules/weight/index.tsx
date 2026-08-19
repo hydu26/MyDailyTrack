@@ -74,8 +74,16 @@ async function addWeight(kg: number, stamp: Stamp) {
 /* ---------- form ghi nhanh ---------- */
 function QuickAdd({ onDone }: { onDone: () => void }) {
   const data = useWeights()
-  const last = data?.kg.at(-1) ?? 70
-  const [v, setV] = useState(() => Math.round(last * 10) / 10)
+  // useLiveQuery trả undefined ở lần render ĐẦU, mà useState chỉ chạy hàm khởi
+  // tạo MỘT lần — đặt giá trị mặc định ngay trong component này là khoá luôn vào
+  // số dự phòng, và dòng "đang hiện lần trước" thành nói dối. Tách làm hai: chỉ
+  // mount form khi dữ liệu đã về.
+  if (!data) return <Sheet onClose={onDone}><div className="empty">Đang tải…</div></Sheet>
+  return <WeightForm last={data.kg.at(-1)} onDone={onDone} />
+}
+
+function WeightForm({ last, onDone }: { last?: number; onDone: () => void }) {
+  const [v, setV] = useState(() => Math.round((last ?? 70) * 10) / 10)
   // null = đóng dấu lúc lưu. Chỉ khác null khi người dùng tự chọn ngày/giờ.
   const [when, setWhen] = useState<When | null>(null)
   const stamp = when ? whenToStamp(when) : null
@@ -90,7 +98,10 @@ function QuickAdd({ onDone }: { onDone: () => void }) {
   return (
     <Sheet onClose={onDone}>
       <h2>Cân nặng</h2>
-      <div className="hint">Đang hiện giá trị lần trước · gõ trực tiếp hoặc dùng −/+</div>
+      <div className="hint">
+        {last !== undefined ? 'Đang hiện giá trị lần trước' : 'Lần cân đầu tiên'}
+        {' · gõ trực tiếp hoặc dùng −/+'}
+      </div>
       <NumberField
         value={v} onChange={setV} onEnter={save}
         label="Cân nặng (kg)" unit="kg" step={0.1} min={20} max={300}
