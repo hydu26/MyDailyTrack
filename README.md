@@ -86,7 +86,9 @@ src/
     ├── registry.ts
     ├── todo/      quy tắc lặp + màn hình
     ├── weight/
-    └── bp/        levels.ts = thang 7 mức, ngưỡng tại nhà
+    ├── bp/        levels.ts = thang 7 mức, ngưỡng tại nhà
+    ├── exercise/
+    └── news/      đọc từ Edge Function, RSS không có CORS
 ```
 
 ## Các bước tiếp theo
@@ -95,7 +97,7 @@ src/
   Lời nhắc **chưa chạy** ở giai đoạn 1: PWA không hẹn giờ thông báo được
   thuần client, cần đẩy từ server. Trên iOS chỉ nhận khi app đã cài vào
   màn hình chính.
-- **Giai đoạn 4** — Thể dục, Tin tức (RSS qua Edge Function), Anime (AniList)
+Giai đoạn 4 xong: Thể dục, Tin tức (RSS qua Edge Function).
 
 ## Ghi chú thiết kế
 
