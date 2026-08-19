@@ -43,3 +43,13 @@ coverage
 # OS
 .DS_Store
 Thumbs.db
+
+# Bản dựng service worker khi chạy dev (devOptions.enabled trong vite.config)
+dev-dist
+
+# Khoá dotenvx nếu có
+.env.keys
+
+# Trình quản lý gói của dự án là pnpm — lockfile của npm/yarn là rác gây lệch cây
+package-lock.json
+yarn.lock
