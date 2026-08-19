@@ -67,7 +67,7 @@ function useBp() {
   }, [])
 }
 
-async function addBp(v: { sys: number; dia: number; pulse: number }, stamp: Stamp) {
+async function addBp(v: BpEntry['value'], stamp: Stamp) {
   const iso = new Date().toISOString()
   // Khác cân nặng: KHÔNG ghi đè bản ghi cùng ngày. Đo sáng và đo tối là hai
   // số liệu riêng, trung bình 7 ngày cần cả hai. Ghi bù cũng chỉ thêm bản ghi.
@@ -111,51 +111,123 @@ function LevelCard({ level, sys, dia }: { level: BpLevel; sys: number; dia: numb
 }
 
 /* ---------- form ghi nhanh ---------- */
+type Reading = { sys: number; dia: number; pulse: number }
+
+/** Trung bình hai lần đo. Làm tròn vì huyết áp luôn báo bằng số nguyên; số thô
+ *  vẫn được giữ trong `readings` nên không mất gì. */
+const meanOf = (a: Reading, b: Reading): Reading => ({
+  sys: Math.round((a.sys + b.sys) / 2),
+  dia: Math.round((a.dia + b.dia) / 2),
+  pulse: Math.round((a.pulse + b.pulse) / 2),
+})
+
+/** Ba ô số của một lần đo.
+ *
+ *  `onChange` nhận HÀM CẬP NHẬT, không nhận giá trị mới. Nếu spread từ prop `v`
+ *  (`onChange({ ...v, sys })`) thì ba ô ghi đè lẫn nhau khi các lần cập nhật bị
+ *  React gộp chung một batch: mỗi ô đọc cùng một `v` cũ, ô sau xoá thay đổi của
+ *  ô trước. Dùng hàm cập nhật thì mỗi lần đọc state mới nhất.
+ */
+function ReadingRows({
+  v, onChange, onEnter,
+}: {
+  v: Reading
+  onChange: (f: (prev: Reading) => Reading) => void
+  onEnter: (v: Reading) => void
+}) {
+  return (
+    <>
+      <div className="fieldrow">
+        <div className="lab">Tâm thu<small>MMHG</small></div>
+        <NumberField compact value={v.sys} label="Tâm thu (mmHg)" min={60} max={260}
+                     onChange={(sys) => onChange((p) => ({ ...p, sys }))}
+                     onEnter={(sys) => onEnter({ ...v, sys })} />
+      </div>
+      <div className="fieldrow">
+        <div className="lab">Tâm trương<small>MMHG</small></div>
+        <NumberField compact value={v.dia} label="Tâm trương (mmHg)" min={40} max={160}
+                     onChange={(dia) => onChange((p) => ({ ...p, dia }))}
+                     onEnter={(dia) => onEnter({ ...v, dia })} />
+      </div>
+      <div className="fieldrow">
+        <div className="lab">Nhịp<small>LẦN/PHÚT</small></div>
+        <NumberField compact value={v.pulse} label="Nhịp tim (lần/phút)" min={30} max={200}
+                     onChange={(pulse) => onChange((p) => ({ ...p, pulse }))}
+                     onEnter={(pulse) => onEnter({ ...v, pulse })} />
+      </div>
+    </>
+  )
+}
+
 function QuickAdd({ onDone }: { onDone: () => void }) {
   const data = useBp()
-  const last = data?.rows.at(-1)?.value
-  const [v, setV] = useState(() => ({
+  // useLiveQuery trả undefined ở lần render ĐẦU, mà useState chỉ chạy hàm khởi
+  // tạo MỘT lần — đặt giá trị mặc định ngay trong component này là khoá luôn vào
+  // số dự phòng, và dòng "đang hiện lần trước" thành nói dối. Tách làm hai: chỉ
+  // mount form khi dữ liệu đã về.
+  if (!data) return <Sheet onClose={onDone}><div className="empty">Đang tải…</div></Sheet>
+  return <BpForm last={data.rows.at(-1)?.value} onDone={onDone} />
+}
+
+function BpForm({ last, onDone }: { last?: BpEntry['value']; onDone: () => void }) {
+  const [r1, setR1] = useState<Reading>(() => ({
     sys: last?.sys ?? 120,
     dia: last?.dia ?? 80,
     pulse: last?.pulse ?? 70,
   }))
-  const set = (k: keyof typeof v) => (n: number) => setV((x) => ({ ...x, [k]: n }))
-  // null = đóng dấu lúc lưu. Chỉ khác null khi người dùng tự chọn ngày/giờ.
+  /** null = chỉ đo một lần, đó là mặc định. Bấm "thêm lần đo 2" mới hiện ô thứ
+   *  hai, và khi đó kết quả lưu là TRUNG BÌNH hai lần — đúng quy trình đo tại
+   *  nhà của ESC/ESH. */
+  const [r2, setR2] = useState<Reading | null>(null)
   const [when, setWhen] = useState<When | null>(null)
   const stamp = when ? whenToStamp(when) : null
   const blocked = when !== null && !stamp
 
+  const result = r2 ? meanOf(r1, r2) : r1
+  const level = classify(result.sys, result.dia)
+
   // Enter trong một ô: ô đó đã commit nhưng state chưa kịp cập nhật, nên nhận
-  // giá trị vừa gõ qua tham số thay vì đọc `v`.
-  const save = async (patch?: Partial<typeof v>) => {
+  // giá trị vừa gõ qua tham số thay vì đọc state.
+  const save = async (over?: { r1?: Reading; r2?: Reading }) => {
     if (blocked) return
-    await addBp({ ...v, ...patch }, stamp ?? stampNow())
+    const a = over?.r1 ?? r1
+    const b = over?.r2 ?? r2
+    const res = b ? meanOf(a, b) : a
+    await addBp(b ? { ...res, readings: [a, b] } : res, stamp ?? stampNow())
     onDone()
   }
-  const level = classify(v.sys, v.dia)
 
   return (
     <Sheet onClose={onDone}>
       <h2>Huyết áp</h2>
       <div className="hint">Tay trái · ngồi tựa lưng · vòng bít bắp tay</div>
 
-      <div className="fieldrow">
-        <div className="lab">Tâm thu<small>MMHG</small></div>
-        <NumberField compact value={v.sys} onChange={set('sys')} onEnter={(sys) => save({ sys })}
-                     label="Tâm thu (mmHg)" min={60} max={260} />
-      </div>
-      <div className="fieldrow">
-        <div className="lab">Tâm trương<small>MMHG</small></div>
-        <NumberField compact value={v.dia} onChange={set('dia')} onEnter={(dia) => save({ dia })}
-                     label="Tâm trương (mmHg)" min={40} max={160} />
-      </div>
-      <div className="fieldrow">
-        <div className="lab">Nhịp<small>LẦN/PHÚT</small></div>
-        <NumberField compact value={v.pulse} onChange={set('pulse')} onEnter={(pulse) => save({ pulse })}
-                     label="Nhịp tim (lần/phút)" min={30} max={200} />
-      </div>
+      {r2 && <div className="subhead"><span className="eyebrow">Lần đo 1</span></div>}
+      <ReadingRows v={r1} onChange={setR1} onEnter={(u) => void save({ r1: u })} />
 
-      <div style={{ margin: '18px 0 16px' }}>
+      {r2 === null ? (
+        <button className="qbtn" style={{ width: '100%', marginTop: 14 }}
+                onClick={() => setR2({ ...r1 })}>
+          + Thêm lần đo 2
+        </button>
+      ) : (
+        <>
+          <div className="subhead">
+            <span className="eyebrow">Lần đo 2</span>
+            <button onClick={() => setR2(null)}>Bỏ</button>
+          </div>
+          {/* setR2 nhận Reading | null nên phải bọc lại cho khớp kiểu */}
+          <ReadingRows v={r2} onEnter={(u) => void save({ r2: u })}
+                       onChange={(f) => setR2((p) => (p ? f(p) : p))} />
+          <div className="resultline">
+            <span className="eyebrow">Kết quả · trung bình</span>
+            <span className="num">{result.sys}/{result.dia} · nhịp {result.pulse}</span>
+          </div>
+        </>
+      )}
+
+      <div style={{ margin: '16px 0' }}>
+        {/* Thẻ mức đọc KẾT QUẢ, không đọc lần đo 1 */}
         <div className="bpcard"
              style={{ background: `var(--bp-${level.n}-bg)`, color: `var(--bp-${level.n}-fg)` }}>
           <span className="nm">{level.name}</span>
@@ -168,7 +240,7 @@ function QuickAdd({ onDone }: { onDone: () => void }) {
       <div className="acts" style={{ marginTop: 20 }}>
         <button className="cancel" onClick={onDone}>Huỷ</button>
         {/* Chặn lưu khi ô ngày/giờ bị xoá trắng — thà không lưu còn hơn lưu sai ngày */}
-        <button className="save" disabled={blocked} onClick={() => save()}>Lưu</button>
+        <button className="save" disabled={blocked} onClick={() => void save()}>Lưu</button>
       </div>
     </Sheet>
   )
@@ -234,6 +306,7 @@ function Screen() {
           <div className="sub">
             mmHg · nhịp <span className="num">{last.value.pulse}</span> ·{' '}
             {prettyDate(last.localDate)} {clockOf(last.measuredAt, last.localTz)}
+            {last.value.readings ? ' · trung bình 2 lần' : ''}
           </div>
         </div>
 
@@ -294,7 +367,10 @@ function Screen() {
               <div className="row" key={r.id}>
                 <div className="k">
                   {prettyDate(r.localDate)}
-                  <small>{clockOf(r.measuredAt, r.localTz)}</small>
+                  <small>
+                    {clockOf(r.measuredAt, r.localTz)}
+                    {r.value.readings ? ' · TB 2 lần' : ''}
+                  </small>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <span className="v">{r.value.sys}/{r.value.dia}</span>
