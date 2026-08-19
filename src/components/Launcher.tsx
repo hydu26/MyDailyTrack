@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { allModules, modulesWithQuickAdd } from '../modules/registry'
+import { SyncFoot } from './Account'
 import { useState } from 'react'
 
 export function Launcher() {
@@ -43,7 +44,7 @@ export function Launcher() {
         </div>
       )}
 
-      <div className="foot"><p>Dữ liệu lưu trên máy này<br />Chưa bật đồng bộ</p></div>
+      <SyncFoot />
 
       {QuickForm && <QuickForm onDone={() => setQuick(null)} />}
     </div>
