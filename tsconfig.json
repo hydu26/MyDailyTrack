@@ -12,5 +12,7 @@
     "isolatedModules": true,
     "types": ["vite/client", "vite-plugin-pwa/client"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  // sw.ts kiểm kiểu riêng bằng tsconfig.sw.json — lib DOM xung đột lib WebWorker
+  "exclude": ["src/sw.ts"]
 }

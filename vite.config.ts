@@ -6,6 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // injectManifest, KHÔNG phải generateSW: Web Push cần handler `push` và
+      // `notificationclick` riêng, generateSW không cho chèn code vào.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
@@ -23,7 +28,11 @@ export default defineConfig({
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,png,svg,woff2}'] },
+      injectManifest: { globPatterns: ['**/*.{js,css,html,png,svg,woff2}'] },
+      // Mặc định `pnpm dev` KHÔNG đăng ký service worker, nên nút bật Nhắc
+      // không làm gì được và mọi thứ chạm tới serviceWorker đều treo. Bật lên
+      // để thử thông báo ngay ở dev thay vì phải build rồi preview.
+      devOptions: { enabled: true, type: 'module', navigateFallback: 'index.html' },
     }),
   ],
   server: { host: true },
