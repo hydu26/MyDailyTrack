@@ -3,7 +3,7 @@ import type { Task } from '../db/types'
 
 /** tracker: bạn nhập, lưu vĩnh viễn, phải chạy offline
  *  feed:    dữ liệu ngoài, chỉ đọc, có cache
- *  hybrid:  dữ liệu ngoài + một chút state cá nhân (vd. anime đã xem tới tập mấy)
+ *  hybrid:  dữ liệu ngoài + một chút state cá nhân
  */
 export type ModuleKind = 'tracker' | 'feed' | 'hybrid'
 
