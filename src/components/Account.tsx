@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
+import type { ReactNode } from 'react'
 import { supabase, syncConfigured } from '../lib/supabase'
 import { getStatus, onStatus, sync, signOut } from '../sync'
 import { clockOf } from '../lib/time'
@@ -13,7 +14,7 @@ export function useSyncStatus() {
  *  Đây là chỗ duy nhất nói về đồng bộ trên trang chính — không có màn hình cài
  *  đặt riêng cho một thứ đặt một lần.
  */
-export function SyncFoot() {
+export function SyncFoot({ children }: { children?: ReactNode }) {
   const s = useSyncStatus()
   const [open, setOpen] = useState(false)
 
@@ -38,6 +39,7 @@ export function SyncFoot() {
         ) : (
           <p>{line}</p>
         )}
+        {children}
       </div>
       {open && <AccountSheet onClose={() => setOpen(false)} />}
     </>

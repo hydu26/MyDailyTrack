@@ -28,6 +28,12 @@ export interface ModuleDef {
   wide?: boolean
   /** Việc định kỳ module này muốn đưa vào todo. */
   seedTasks?: TaskSeed[]
+  /** Khoá trong bảng `settings` phải bằng `true` thì module mới hiện.
+   *
+   *  Không khai = luôn hiện. Dùng cho module chỉ áp dụng với một số người
+   *  (Kinh nguyệt), và mặc định là ẨN: không suy đoán gì về người dùng cho tới
+   *  khi họ tự bật. Khoá này nằm trong `settings` nên theo được sang máy khác. */
+  enabledBy?: string
 }
 
 const registry = new Map<string, ModuleDef>()
