@@ -41,7 +41,19 @@ export interface ExerciseEntry extends BaseEntry {
   module: 'exercise'
   value: { type: string; minutes: number; intensity: number }
 }
-export type Entry = WeightEntry | BpEntry | ExerciseEntry
+/** Một dòng cho MỖI NGÀY ra máu, không phải một dòng cho cả kỳ kinh.
+ *
+ *  Ghi theo ngày thì mức ra máu từng ngày khác nhau được, và ranh giới kỳ kinh
+ *  suy ra từ các ngày liền nhau — không phải nhớ bấm "kết thúc". Đổi lại phải
+ *  gộp đợt cẩn thận, xem `src/modules/period/cycles.ts`.
+ */
+export interface PeriodEntry extends BaseEntry {
+  module: 'period'
+  /** 0 = ra đốm, 1 = nhẹ, 2 = vừa, 3 = nhiều. Đốm KHÔNG mở chu kỳ mới. */
+  value: { flow: 0 | 1 | 2 | 3 }
+}
+
+export type Entry = WeightEntry | BpEntry | ExerciseEntry | PeriodEntry
 
 /* ---- việc cần làm: lưu QUY TẮC, không lưu từng lần xuất hiện ---- */
 export type TaskKind = 'once' | 'daily' | 'weekly' | 'interval'

@@ -19,6 +19,15 @@
   --bp-6-bg: #2e1c1c; --bp-6-fg: #df8c8c;
   --bp-7-bg: #3a1d1d; --bp-7-fg: #efa0a0;
 
+  /* Bốn pha chu kỳ — thang màu THỨ HAI và cuối cùng trong app, do chủ dự án yêu
+     cầu. Cùng ngôn ngữ với thang huyết áp: bão hoà thấp, tông riêng biệt. Cố ý
+     chọn tông ÍT trùng thang huyết áp nhất (hồng bụi, xanh bụi, vàng xỉn, tím
+     bụi) để hai thang không bị đọc lẫn nhau. */
+  --cy-menses: #b5677a;
+  --cy-follicular: #7f9fc4;
+  --cy-fertile: #c9a24d;
+  --cy-luteal: #9481b8;
+
   --good: #6fc9a8;
   --r: 10px;
   /* Ô date/time gốc của trình duyệt đọc token này để vẽ nền tối + bộ chọn tối */
@@ -315,3 +324,59 @@ button { font-family: inherit; color: inherit; border: 0; background: none; curs
 .nrow .ttl { font-size: 13.5px; line-height: 1.42; }
 .nrow:hover .ttl { text-decoration: underline; text-decoration-color: var(--ink-4); }
 
+
+/* ===== Lịch (module kinh nguyệt) =====
+   Mức ra máu thể hiện bằng độ đậm của mực, KHÔNG bằng màu — quy tắc 4 chỉ cho
+   màu ở nơi màu là dữ liệu, và chỗ đó đã là thang huyết áp. */
+.cal-head { display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; font-size: 12.5px; color: var(--ink-2); }
+.cal-nav { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+  color: var(--ink-2); font-size: 16px; line-height: 1; }
+.cal-nav:hover:not(:disabled) { border-color: var(--ink-3); color: var(--ink); }
+.cal-nav:disabled { color: var(--ink-4); border-color: var(--line-2); }
+
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-wd { font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em; color: var(--ink-4);
+  text-align: center; padding-bottom: 4px; }
+.cal-d { position: relative; aspect-ratio: 1; border-radius: 7px; border: 1px solid transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.cal-d .n { font-family: var(--mono); font-size: 12px; color: var(--ink-2); line-height: 1; }
+.cal-d:hover:not(:disabled) { border-color: var(--line); }
+.cal-d:disabled .n { color: var(--ink-4); }
+/* dấu tròn = đã ghi; độ đậm theo mức ra máu */
+.cal-d i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+.cal-d.on { background: var(--surface); }
+.cal-d.on .n { color: var(--ink); }
+/* nét đứt = ngày dự kiến, chưa xảy ra */
+.cal-d.pred { border-color: var(--line); border-style: dashed; }
+.cal-d.today { border-color: var(--ink-3); border-style: solid; }
+
+
+/* ===== Vòng chu kỳ ===== */
+.ring-wrap { position: relative; }
+.ring { display: block; width: 100%; max-width: 268px; margin: 0 auto; height: auto; }
+.ring path { cursor: pointer; }
+/* Vùng chạm rộng hơn cung nhìn thấy — cung dày 18px là quá mảnh cho ngón tay */
+.ring .hit { stroke: transparent; }
+.ring-mid { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  /* Chữ ở giữa phải nằm gọn trong lòng vòng: cung dày 20px trên bán kính 92, nên
+     lòng vòng chỉ rộng khoảng 60% đường kính. 30% mỗi bên là vừa. */
+  pointer-events: none; padding: 0 30%; }
+.ring-mid .ph { font-size: 13px; color: var(--ink); font-weight: 500; }
+.ring-mid .rg { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+  letter-spacing: .04em; margin-top: 4px; }
+.ring-mid .ds { font-size: 10px; color: var(--ink-3); line-height: 1.45; margin-top: 7px;
+  text-wrap: balance; }
+.ring-key { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; margin-top: 14px; }
+.ring-key button { display: flex; align-items: center; gap: 6px; font-family: var(--mono);
+  font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-4); }
+.ring-key button.on { color: var(--ink-2); }
+.ring-key i { width: 9px; height: 9px; border-radius: 2px; display: block; }
+.ring-key button:disabled { color: var(--ink-4); opacity: .35; cursor: default; }
+
+/* KPI — ba số quan trọng, mỗi số một ô, căn giữa. Thay cho danh sách nhiều hàng. */
+.kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
+.kpi .v { font-size: 25px; font-weight: 200; letter-spacing: -.02em; line-height: 1; }
+.kpi .l { font-family: var(--mono); font-size: 9px; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-4); line-height: 1.55; margin-top: 7px; }

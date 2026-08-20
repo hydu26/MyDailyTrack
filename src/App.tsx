@@ -10,6 +10,7 @@ import './modules/todo'
 import './modules/weight'
 import './modules/bp'
 import './modules/exercise'
+import './modules/period'
 import './modules/news'
 
 function ModuleRoute() {

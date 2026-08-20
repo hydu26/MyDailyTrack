@@ -97,6 +97,11 @@ thang huyết áp (`src/modules/bp/levels.ts`), vì ở đó màu **mang thông 
 icon, thanh tiến trình hay biểu đồ — mọi thứ có màu thì không màu nào còn
 nói lên điều gì.
 
+- **Thang màu THỨ HAI và cuối cùng: bốn pha chu kỳ** (`--cy-*`), do chủ dự án
+  yêu cầu. Cùng ngôn ngữ với thang huyết áp: bão hoà thấp, và cố ý chọn tông ít
+  trùng thang huyết áp nhất (hồng bụi, xanh bụi, vàng xỉn, tím bụi) để hai thang
+  không bị đọc lẫn. Token nằm một chỗ trong `styles.css`, đổi là đổi cả app.
+  **Đừng thêm thang màu thứ ba.**
 - **Ngoại lệ duy nhất về ảnh: module Tin tức.** Ảnh bài báo là *nội dung*, không
   phải trang trí — cùng logic với thang màu huyết áp. Chủ dự án yêu cầu có ảnh
   preview để tin tức hấp dẫn hơn; đừng gỡ đi. Nhưng mọi thứ QUANH ảnh vẫn đơn
@@ -172,6 +177,15 @@ register({
 **Thêm module mới:** tạo thư mục trong `src/modules/`, gọi `register()`, thêm
 một dòng import vào `App.tsx`. Không sửa file của module khác. Thứ tự import
 trong `App.tsx` = thứ tự trên trang chính.
+
+**Module chỉ áp dụng với một số người** thì khai `enabledBy: 'profile.<khoá>'`.
+Module đó **ẩn cho tới khi** khoá settings ấy bằng `true` — mặc định ẩn, vì app
+không suy đoán gì về người dùng. Khoá `profile.*` nằm trong `settings` nên lựa
+chọn theo được sang máy khác. Lọc ở `useVisibleModules()`, và hàng Ghi nhanh phải
+lọc theo cùng danh sách, không thì bấm được vào module đang ẩn.
+
+Route `/m/<id>` vẫn mở được kể cả khi module đang ẩn — cố ý, để link sâu từ thông
+báo không chết. Chỉ ô trên trang chính và hàng Ghi nhanh là bị ẩn.
 
 **Bẫy khi viết form ghi nhanh:** `useLiveQuery` trả `undefined` ở lần render
 ĐẦU, mà `useState` chỉ chạy hàm khởi tạo MỘT lần. Đặt giá trị mặc định trực tiếp
@@ -290,6 +304,73 @@ rep, không bài tập. Chỉ loại + phút + cường độ 1–5.
   - Đã thử hai bản khác và **cả hai đều sai**: dải cuộn ngang (kéo-để-cuộn đánh
     nhau với chạm-để-mở), và thẻ link thẳng ra báo (không còn chỗ nào bấm để mở
     module). Đừng làm lại.
+
+### Module Kinh nguyệt
+
+`src/modules/period/` — `cycles.ts` là logic thuần (đã test 20 ca), `index.tsx` là UI.
+
+- **Một dòng cho MỖI NGÀY ra máu**, không phải một dòng cho cả kỳ. Ghi theo ngày
+  thì mức ra máu từng ngày khác nhau được, và ranh giới kỳ suy ra từ các ngày
+  liền nhau — không phải nhớ bấm "kết thúc".
+- **Ra đốm (`flow: 0`) KHÔNG mở chu kỳ mới.** Ra máu giữa chu kỳ tính là ngày
+  đầu thì một lần ra đốm sẽ sinh ra một "chu kỳ" 5 ngày và làm sai toàn bộ số
+  liệu. Vẫn ghi lại vì FIGO coi ra máu giữa kỳ là thứ đáng theo dõi.
+- **Hai đợt cách nhau đúng một ngày thì GỘP**: gần như chắc chắn là quên ghi một
+  hôm, mà nếu tách thì sinh ra một "chu kỳ" 2 ngày.
+- **Trung vị, không phải trung bình cộng.** Một chu kỳ lệch bất thường (bệnh,
+  stress, quên ghi) kéo trung bình đi rất xa: 26/28/29/30/90 cho trung vị 29 còn
+  trung bình 41. Chỉ lấy 6 chu kỳ gần nhất — chu kỳ đổi theo tuổi và hoàn cảnh.
+- **Dự đoán là một KHOẢNG, không phải một ngày**, và khoảng lấy đúng từ chu kỳ
+  ngắn nhất–dài nhất của chính người dùng. Chu kỳ càng đều thì khoảng càng hẹp,
+  nên con số tự phản ánh độ tin cậy thật.
+- **Khả năng thụ thai vẽ thành ĐƯỜNG, không phải khung có biên.** Chủ dự án yêu
+  cầu có biểu đồ dự đoán sau khi đã nghe cảnh báo; đây là quyết định của chủ dự
+  án, đừng gỡ. Nhưng cách thể hiện thì không thoả hiệp:
+  - Không có "cửa sổ an toàn" với biên cứng. Khung có biên nói rằng ngoài khung
+    là an toàn, mà điều đó không đúng — tính theo lịch thất bại ~24%/năm.
+  - `fertileCurve()` tính xác suất thật: ngày rụng trứng nằm đâu đó trong
+    [kỳ sau sớm nhất − 17, kỳ sau muộn nhất − 11], và trọng số của ngày `d` là tỷ
+    lệ các ngày rụng trứng khả dĩ nằm trong `[d, d+5]` (tinh trùng sống ~5 ngày).
+  - Nhờ vậy **hình vẽ tự nói nó chắc chắn tới đâu**: chu kỳ đều thì đỉnh cao và
+    hẹp, chu kỳ dao động thì đỉnh thấp và trải rộng. Test xác nhận 0,86 so với
+    0,43. Trọng số KHÔNG BAO GIỜ đạt 1 vì khoảng rụng trứng khả dĩ rộng ít nhất
+    7 ngày (hoàng thể 11–17) mà một ngày chỉ dễ thụ thai với 6 ngày rụng trứng.
+  - Bất biến để kiểm: tổng trọng số cả chu kỳ ≈ 6 ngày, đúng bằng độ dài cửa sổ
+    dễ thụ thai sinh học.
+  - Nói về độ chính xác **MỘT lần**, ở chân màn hình. Đây là app cá nhân, không
+    phải thiết bị y tế; lặp cảnh báo ở mọi khối chỉ làm người dùng bỏ qua nó. Sự
+    trung thực dồn vào CÁCH VẼ, không vào chữ.
+
+**Vòng chu kỳ** (`CycleRing`) chia bốn pha, trỏ hoặc bấm vào một cung thì giữa
+vòng hiện chi tiết pha đó.
+
+- Cung "dễ thụ thai" vẽ theo **TỪNG NGÀY**, độ đậm theo xác suất — không phải một
+  khối đặc. Khối đặc có biên nói rằng ngoài biên là an toàn, mà điều đó không
+  đúng. Vòng vẫn đọc được như bốn pha nhưng pha đó tự nhoè ở hai đầu.
+- Ranh giới nang trứng/hoàng thể lấy theo ngày dễ thụ thai đầu và cuối, **không**
+  theo "ngày 14": ngày rụng trứng suy từ độ dài chu kỳ chứ không cố định.
+- **Không phải chu kỳ nào cũng có đủ bốn pha** — chu kỳ ngắn hoặc kỳ kinh dài có
+  thể không còn ngày nang trứng nào. Nút chú giải của pha không tồn tại phải bị
+  chặn, đã gặp lỗi bấm vào rồi ra ô trống.
+- Chuột thì hover, cảm ứng thì bấm giữ lại: phân biệt bằng `e.pointerType`, vì
+  điện thoại không có hover.
+- Vùng chạm của cung rộng 34px trong khi cung nhìn thấy chỉ 20px — 20px là quá
+  mảnh cho ngón tay.
+- Chữ giữa vòng phải nằm gọn trong lòng vòng: cung dày 20px trên bán kính 92 nên
+  lòng vòng chỉ rộng ~60% đường kính, padding 30% mỗi bên.
+- Ngưỡng tham chiếu FIGO/ACOG trong `NORMAL`: chu kỳ 24–38 ngày, ra máu tới 7
+  ngày, chênh lệch ngắn–dài tới 7 ngày (FIGO 2018, nhóm tuổi 26–41; tuổi 18–25 và
+  42–45 được phép rộng hơn). Diễn đạt bằng mô tả "đáng để ý", KHÔNG phải chẩn
+  đoán — giống cách thang huyết áp làm.
+- Mức ra máu thể hiện bằng **độ đậm của mực**, không bằng màu: quy tắc 4 chỉ cho
+  màu ở nơi màu là dữ liệu, và chỗ đó đã là thang huyết áp.
+- Không có `seedTasks`: nhắc "kỳ tới sắp đến" là nhắc theo DỰ ĐOÁN, mà hệ thống
+  việc chỉ diễn đạt được quy tắc cố định nên sẽ lệch dần mỗi tháng.
+- **Thứ tự màn hình**: hero → KPI (ba số) → kỳ tới dự kiến → vòng chu kỳ → lịch →
+  nút thêm. Số liệu là **KPI ba ô**, không phải danh sách nhiều hàng; lịch sử chu
+  kỳ gộp thành **một dòng số** (`28 · 28 · 29 · 28`) thay cho danh sách tám hàng —
+  đọc một dòng đó là thấy ngay đều hay không. Cuối màn hình chỉ còn lịch và nút
+  thêm, không chèn gì vào giữa hai thứ đó.
 
 ### Thang huyết áp
 
@@ -414,8 +495,8 @@ còn `migration new` thì tự tạo file rỗng — viết thẳng file vào
 
 ## Trạng thái hiện tại
 
-**Xong:** vỏ launcher, Việc cần làm, Cân nặng, Huyết áp, Thể dục, Tin tức, đồng
-bộ Supabase, nhắc nhở qua Web Push. Vẫn chạy đầy đủ khi chưa đăng nhập —
+**Xong:** vỏ launcher, Việc cần làm, Cân nặng, Huyết áp, Thể dục, Kinh nguyệt,
+Tin tức, đồng bộ Supabase, nhắc nhở qua Web Push. Vẫn chạy đầy đủ khi chưa đăng nhập —
 riêng Tin tức cần mạng cho lần tải đầu.
 
 **Giới hạn đã biết:** `completeLinked()` tick *tất cả* việc trỏ về một module,
@@ -450,3 +531,9 @@ cố định, không light mode, không xuất PDF.
 
 Đừng thêm tính năng không được yêu cầu. Đừng làm màn hình cài đặt cho những
 thứ chỉ đặt một lần.
+
+**Ngoại lệ, do chủ dự án yêu cầu:** sheet "Cá nhân" ở chân trang chính, hiện chỉ
+có một dòng chọn giới tính để bật/tắt module Kinh nguyệt. Đặt ở chân trang chứ
+KHÔNG nhét vào sheet Đồng bộ: sheet đó chỉ mở được khi đã cấu hình Supabase, nên
+nếu tắt đồng bộ thì sẽ không còn chỗ nào đổi được lựa chọn này. Tắt module không
+xoá dữ liệu đã ghi.
