@@ -99,6 +99,38 @@ src/
   màn hình chính.
 Giai đoạn 4 xong: Thể dục, Tin tức (RSS qua Edge Function).
 
+## Deploy (Vercel)
+
+`vercel.json` đã cấu hình sẵn. Vercel tự nhận pnpm từ `pnpm-lock.yaml`.
+
+**Ba biến phải đặt trong Vercel → Settings → Environment Variables** (cả
+Production và Preview). Vite nhét chúng vào bundle **lúc build**, nên thiếu là app
+build ra vẫn chạy nhưng không đồng bộ và không nhắc được, mà không báo lỗi gì:
+
+```
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+VITE_VAPID_PUBLIC_KEY
+```
+
+Không đặt `VAPID_PRIVATE_KEY`, `CRON_SECRET` hay service_role key ở đây — chúng
+thuộc về `supabase secrets set`, và đặt với tiền tố `VITE_` là đưa thẳng vào
+bundle công khai.
+
+**Sau lần deploy đầu, kiểm ba thứ:**
+
+1. `curl -I https://<domain>/sw.js` → phải là `content-type: application/javascript`.
+   Nếu ra `text/html` thì rewrite đã ăn mất service worker và PWA không chạy.
+2. Mở `https://<domain>/m/bp` rồi **tải lại trang** → phải ra module huyết áp, không
+   phải 404.
+3. Đăng nhập ở chân trang → phải chuyển sang "Đã đồng bộ HH:MM".
+
+**Rồi sửa `site_url`** trong Supabase → Authentication → URL Configuration từ
+`http://localhost:3000` sang domain thật.
+
+Không cần đặt `base` trong `vite.config.ts`: Vercel phục vụ ở gốc domain. (Chỉ
+GitHub Pages mới cần, vì repo nằm ở đường con.)
+
 ## Ghi chú thiết kế
 
 Dark mode duy nhất. Toàn bộ token trong `src/styles.css`.
